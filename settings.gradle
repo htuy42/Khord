@@ -1,0 +1,3 @@
+rootProject.name = 'ChordZMQ'
+
+def grpcVersion = '1.6.1'

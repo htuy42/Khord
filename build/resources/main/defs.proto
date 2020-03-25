@@ -1,0 +1,9 @@
+syntax = "proto3";
+
+package com.htuy.zmq;
+option java_outer_classname = "AwfulServer";
+
+message PutRequest {
+    string key = 1;
+    string value = 2;
+}
