@@ -1,9 +1,52 @@
 syntax = "proto3";
 
-package com.htuy.zmq;
-option java_outer_classname = "AwfulServer";
+package com.htuy.chord;
+option java_outer_classname = "Chord";
 
-message PutRequest {
-    string key = 1;
-    string value = 2;
+message ChordAddress{
+    // The actual address this node can be reached at.
+    string addr = 1;
+
+    int32 port = 2;
+
+    // The hashed id of this node.
+    repeated bool id = 3;
+}
+
+// A request for the successor of a given id. Maps to a call to findSuccessor.
+message ClosestPrecedingFingerRequest{
+
+    // The address to find the successor of.
+    repeated bool target = 1;
+}
+
+
+// The result of a SuccessorRequest.
+message ClosestPrecedingFingerResponse{
+    // The actual address that is predecessor for the request.
+    ChordAddress fingerAddr = 1;
+
+    // The number of hops that were required to obtain this response. Mostly for diagnostics / testing, not useful
+    // outside of debug modes.
+    int32 hopsTaken = 3;
+}
+
+// A request for successor (of the node the request is sent to).
+message SuccRequest{}
+
+// Response to a SuccRequest.
+message SuccResponse{
+    // The ChordAddress that serves as successor of the node sending this response
+    ChordAddress succ = 1;
+}
+
+
+
+// A ChordNode is a member of the ChordRing.
+service ChordNode{
+    // Get the finger of this node that is closest to the given target without being past it.
+    rpc ClosestPrecedingFinger (ClosestPrecedingFingerRequest) returns (ClosestPrecedingFingerResponse);
+
+    // Get the immediate successor of this node.
+    rpc Succ (SuccRequest) returns (SuccResponse);
 }
