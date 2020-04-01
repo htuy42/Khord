@@ -11,42 +11,40 @@ message ChordAddress{
 
     // The hashed id of this node.
     repeated bool id = 3;
+
+    // Whether or not there was a value here, in case the address was null.
+    bool isMissing = 4;
 }
 
-// A request for the successor of a given id. Maps to a call to findSuccessor.
-message ClosestPrecedingFingerRequest{
 
-    // The address to find the successor of.
+// A request for the lookup of some address. The exact semantics of the lookup depend on the type of request.
+message LookupRequest{
+
+    // The address to lookup.
     repeated bool target = 1;
 }
 
 
-// The result of a SuccessorRequest.
-message ClosestPrecedingFingerResponse{
-    // The actual address that is predecessor for the request.
-    ChordAddress fingerAddr = 1;
-
-    // The number of hops that were required to obtain this response. Mostly for diagnostics / testing, not useful
-    // outside of debug modes.
-    int32 hopsTaken = 3;
-}
-
 // A request for successor (of the node the request is sent to).
 message SuccRequest{}
 
-// Response to a SuccRequest.
-message SuccResponse{
-    // The ChordAddress that serves as successor of the node sending this response
-    ChordAddress succ = 1;
-}
+// A request for the predecessor (of the node the request is sent to).
+message PredRequest{}
 
-
+// The response to an UpdateTable call.
+message NotifyResponse{}
 
 // A ChordNode is a member of the ChordRing.
 service ChordNode{
-    // Get the finger of this node that is closest to the given target without being past it.
-    rpc ClosestPrecedingFinger (ClosestPrecedingFingerRequest) returns (ClosestPrecedingFingerResponse);
+    // Get the successor of the target id in the ring. Used when a node is joining the network.
+    rpc FindSuccessor(LookupRequest) returns (ChordAddress);
 
     // Get the immediate successor of this node.
-    rpc Succ (SuccRequest) returns (SuccResponse);
+    rpc Succ (SuccRequest) returns (ChordAddress);
+
+    // Get the immediate predecessor of this node.
+    rpc Pred (PredRequest) returns (ChordAddress);
+
+    // Notify a node that we might be its successor
+    rpc Notify(ChordAddress) returns (NotifyResponse);
 }

@@ -50,7 +50,6 @@ class ChordIdTest {
         for (test in greaterThanTests) {
             val id1 = ChordIdUtils.chordIdFromBytes(test.first)
             val id2 = ChordIdUtils.chordIdFromBytes(test.second)
-
             assert(id1.greaterThan(id2) == test.greater) { "Failed on $test." }
         }
     }
@@ -140,5 +139,4 @@ class ChordIdTest {
             assert(idExpected.contentEquals(actual)) { "Failed on $test. Got ${actual.asList()}, expected ${idExpected.asList()}." }
         }
     }
-
 }

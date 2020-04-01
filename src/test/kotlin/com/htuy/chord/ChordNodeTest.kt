@@ -65,7 +65,7 @@ class ChordNodeTest {
      * Generates a random [ChordRingBasicLookupTest].
      */
     private fun createRandomLookupTest(): ChordRingBasicLookupTestIds {
-        val ids = (0..Random.nextInt(20)).map {
+        val ids = (0..Random.nextInt(10,20)).map {
             ChordIdUtils.chordIdFromBytes(Random.nextBytes(LENGTH / 8))
         }.distinctBy { it.display() }
 
@@ -83,7 +83,65 @@ class ChordNodeTest {
                 break
             }
         }
-        return ChordRingBasicLookupTestIds(sorted, target, correctSucc)
+        return ChordRingBasicLookupTestIds(ids, target, correctSucc)
+    }
+
+    private fun testIdsFromStrings(strings : List<String>): ChordRingBasicLookupTestIds{
+        val ids = strings.map{str ->
+            BooleanArray(LENGTH){
+                if(it >= str.length){
+                    false
+                } else {
+                    str[it] == '1'
+                }
+            }
+        }
+        return ChordRingBasicLookupTestIds(ids,ids[0],ids[0])
+    }
+
+    @Test
+    fun testChordRingCreation(){
+        fun doSingleTest(test: ChordRingBasicLookupTestIds){
+            println("Making ring")
+            val cluster = ChordTestUtils.createRingWithIdsByJoin(test.ids)
+            println("Made ring")
+            // Sleep to allow the ring to stabilize
+            Thread.sleep((250 * LENGTH * 2.5).toLong())
+            try{
+                cluster.verifyTables()
+            } catch(e: AssertionError){
+                throw e
+            }
+            try {
+                cluster.lookupValueAtEach(
+                    test.toLookup,
+                    test.expectedLocation
+                )
+            } catch (e: AssertionError) {
+                e.printStackTrace()
+                println("Failed test.")
+                println("IDS:")
+                for(id in test.ids){
+                    println(id.display())
+                }
+                println("To lookup")
+                println(test.toLookup.display())
+                println("Expected loc")
+                println(test.expectedLocation.display())
+                cluster.stop()
+                throw e
+            }
+            cluster.stop()
+
+        }
+        for(i in 0..100){
+            println("\n new test")
+            doSingleTest(createRandomLookupTest())
+        }
+//        val oo1 = booleanArrayOf(false,false,true,false,false,false,false,false)
+//        val oooo1o1 = booleanArrayOf(false,false,false,false,true,false,true,false)
+//        val o111oo1 = booleanArrayOf(false,true,true,true,false,false,true,false)
+//        doSingleTest(ChordRingBasicLookupTestIds(listOf(oo1,o111oo1,oooo1o1), oo1,oo1))
     }
 
     @Test
@@ -114,7 +172,7 @@ class ChordNodeTest {
         }
         chordRingBasicLookupTests.forEach { doSingleTest(ChordRingBasicLookupTestIds.fromNonIds(it)) }
 
-        for (i in 0..100) {
+        for (i in 0..200) {
             doSingleTest(createRandomLookupTest())
         }
     }

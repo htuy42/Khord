@@ -11,3 +11,5 @@ const val LENGTH = 32
  * The number of possible ids: 2^[LENGTH]
  */
 val M = 2.0.pow(LENGTH.toDouble()).toLong()
+
+const val testInd = 7
