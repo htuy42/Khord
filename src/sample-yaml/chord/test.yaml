@@ -1,0 +1,20 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: chord-test
+spec:
+  selector:
+    matchLabels:
+      run: chord-test
+  replicas: 1
+  template: 
+    metadata:
+      labels:
+        run: chord-test
+    spec:
+      containers:
+      - name: chord
+        image: docker.io/htuy/chord:1.0
+        args: ["true", "false"]
+        ports:
+          - containerPort: 22415

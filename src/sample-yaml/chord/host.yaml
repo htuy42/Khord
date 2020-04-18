@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: chord-host
+spec:
+  containers:
+  - name: chord
+    image: docker.io/htuy/chord:1.0
+    args: ["false"]
+    ports:
+      - containerPort: 22415
+    env:
+    - name: POD_IP
+      valueFrom:
+        fieldRef:
+          fieldPath: status.podIP

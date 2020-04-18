@@ -1,0 +1,3 @@
+YAML files for launching a collection of chord nodes in a given cluster. Uses ZK to communicate about a single "host"
+node which newly started nodes can use to hook into the network. Not a stable solution but easily upgradable into one,
+covers most of the bases in combination with Main.

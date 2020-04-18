@@ -11,7 +11,7 @@ import kotlin.random.Random
  */
 class ChordNodeTest {
 
-    private data class ChordRingBasicLookupTest(
+    data class ChordRingBasicLookupTest(
         val ids: List<ByteArray>,
         val toLookup: ByteArray,
         val expectedLocation: ByteArray
@@ -45,7 +45,7 @@ class ChordNodeTest {
         )
     )
 
-    private data class ChordRingBasicLookupTestIds(
+    data class ChordRingBasicLookupTestIds(
         val ids: List<ChordId>,
         val toLookup: ChordId,
         val expectedLocation: ChordId
@@ -64,7 +64,7 @@ class ChordNodeTest {
     /**
      * Generates a random [ChordRingBasicLookupTest].
      */
-    private fun createRandomLookupTest(): ChordRingBasicLookupTestIds {
+    fun createRandomLookupTest(): ChordRingBasicLookupTestIds {
         val ids = (0..Random.nextInt(10,20)).map {
             ChordIdUtils.chordIdFromBytes(Random.nextBytes(LENGTH / 8))
         }.distinctBy { it.display() }
@@ -134,14 +134,10 @@ class ChordNodeTest {
             cluster.stop()
 
         }
-        for(i in 0..100){
+        for(i in 0..1){
             println("\n new test")
-            doSingleTest(createRandomLookupTest())
+//            doSingleTest(createRandomLookupTest())
         }
-//        val oo1 = booleanArrayOf(false,false,true,false,false,false,false,false)
-//        val oooo1o1 = booleanArrayOf(false,false,false,false,true,false,true,false)
-//        val o111oo1 = booleanArrayOf(false,true,true,true,false,false,true,false)
-//        doSingleTest(ChordRingBasicLookupTestIds(listOf(oo1,o111oo1,oooo1o1), oo1,oo1))
     }
 
     @Test
@@ -174,6 +170,35 @@ class ChordNodeTest {
 
         for (i in 0..200) {
             doSingleTest(createRandomLookupTest())
+        }
+    }
+
+    @Test
+    fun testKvStore(){
+        for(i in 0..1){
+            val test = createRandomLookupTest()
+            val cluster = ChordTestUtils.createRingWithIdsByJoin(test.ids)
+            val store = DataStore(cluster.nodes[0].ownAddr)
+
+            val datas = (0..100).map{
+                val key = "$it"
+                val contents = key.toByteArray()
+                Pair(key,contents)
+            }
+            for((key,contents) in datas){
+                store.store(key,contents)
+            }
+            Thread.sleep(LENGTH * 25 * UPDATE_RATE)
+            cluster.verifyTables()
+
+            val otherStore = DataStore(cluster.nodes[1].ownAddr)
+            for((key,contents) in datas){
+                val fetched = otherStore.get(key)
+                assert(fetched?.contentEquals(contents)?:false){
+                    "Fetched ${fetched.toString()} for $key"
+                }
+            }
+            cluster.stop()
         }
     }
 }

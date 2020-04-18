@@ -24,6 +24,49 @@ message LookupRequest{
     repeated bool target = 1;
 }
 
+// A request to store the given content. Will be denied if target does not belong at the node this is sent to.
+message PutRequest{
+
+    // The hashed id of content.
+    repeated bool target = 1;
+
+    // The content to store.
+    bytes content = 2;
+}
+
+// Response to a put request, indicating whether or not the value was stored successfully.
+message PutResponse{
+
+    // Whether or not the value was actually stored at the requested location.
+    bool success = 1;
+}
+
+// Request to get the value keyed by target.
+message GetRequest{
+    // The key of the value to get.
+    repeated bool target = 1;
+}
+
+// Response to a GetRequest
+message GetResponse{
+    // Whether or not the key was found. If false, content will be empty.
+    bool success = 1;
+
+    // The content found for the key that was gotten. Empty if success is false.
+    bytes content = 2;
+}
+
+// Transfer responsibility for a collection of stored values, generally when a node is leaving or has learned of a new
+// successor
+message TransferRequest{
+    // The key,val pairs to transfer.
+    repeated PutRequest values = 1;
+}
+
+// The response to a Transfer call.
+message TransferResponse{
+
+}
 
 // A request for successor (of the node the request is sent to).
 message SuccRequest{}
@@ -33,6 +76,8 @@ message PredRequest{}
 
 // The response to an UpdateTable call.
 message NotifyResponse{}
+
+
 
 // A ChordNode is a member of the ChordRing.
 service ChordNode{
@@ -47,4 +92,14 @@ service ChordNode{
 
     // Notify a node that we might be its successor
     rpc Notify(ChordAddress) returns (NotifyResponse);
+
+    // Put a value onto this node. Afterwards the node is responsible for holding that value and transferring it
+    // if necessary.
+    rpc Put(PutRequest) returns (PutResponse);
+
+    // Get a value from this node.
+    rpc Get(GetRequest) returns (GetResponse);
+
+    // Transfer a value from another node to this one.
+    rpc Transfer(TransferRequest) returns (TransferResponse);
 }

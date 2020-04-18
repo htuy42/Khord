@@ -1,0 +1,25 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: chord-follower
+spec:
+  selector:
+    matchLabels:
+      run: chord-follower
+  replicas: 5
+  template: 
+    metadata:
+      labels:
+        run: chord-follower
+    spec:
+      containers:
+      - name: chord
+        image: docker.io/htuy/chord:1.0
+        args: ["true"]
+        ports:
+          - containerPort: 22415
+        env:
+        - name: POD_IP
+          valueFrom:
+            fieldRef:
+              fieldPath: status.podIP

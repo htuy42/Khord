@@ -26,6 +26,15 @@ object ChordIdUtils {
     }
 
     /**
+     * Returns a salted id from the given string and salt.
+     * In practice, just concats [from] and [salt] with [separator] between them, so [separator] should be a string the
+     * application guarantees to never use otherwise.
+     */
+    fun chordIdFromStringSalted(from: String, salt : Int, separator:String = ":%XXRESERVEDXX%:"): ChordId{
+        return chordIdFromString("$from$separator$salt")
+    }
+
+    /**
      * Create a [ChordId] from the given address and port (by concatenating them and then treating them as a string).
      */
     fun chordIdFromAddrAndPort(addr: String, port: Int): ChordId {

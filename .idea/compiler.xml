@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="CompilerConfiguration">
+    <bytecodeTargetLevel>
+      <module name="chord1.main" target="11" />
+      <module name="chord1.test" target="11" />
+      <module name="chord12.main" target="11" />
+      <module name="chord12.test" target="11" />
+      <module name="chord2.main" target="11" />
+      <module name="chord2.test" target="11" />
+      <module name="chord3.main" target="11" />
+      <module name="chord3.test" target="11" />
+      <module name="chord7.main" target="11" />
+      <module name="chord7.test" target="11" />
+      <module name="chord7123.main" target="11" />
+      <module name="chord7123.test" target="11" />
+      <module name="ChordZMQ.main" target="11" />
+      <module name="ChordZMQ.test" target="11" />
+    </bytecodeTargetLevel>
+  </component>
+</project>

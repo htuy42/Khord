@@ -1,5 +1,6 @@
 package com.htuy.chord
 
+import com.google.protobuf.ByteString
 import io.grpc.Server
 import io.grpc.ServerBuilder
 import io.grpc.stub.StreamObserver
@@ -13,8 +14,11 @@ import kotlin.concurrent.thread
 class ChordNode(
     val ownAddr: ChordAddressWrapper,
     givenAddrs: Array<ChordAddressWrapper> = arrayOf(),
-    val updateFrequency: Long = 250
+    val updateFrequency: Long = UPDATE_RATE
 ) : ChordNodeGrpc.ChordNodeImplBase() {
+
+    // Stores objects that other nodes have placed here.
+    private val remoteObjects = RemoteStore(this)
 
     // The server this node uses to service GRPC requests from other [ChordClient]s
     private val server: Server
@@ -22,6 +26,7 @@ class ChordNode(
     // Our current predecessor in the ring
     private var predecessor: ChordAddressWrapper? = null
 
+     // Lock for the [predecessor] field.
     private val predLock = ReentrantLock()
 
     // The next finger to attempt to correct in fixFingers
@@ -97,9 +102,7 @@ class ChordNode(
                 }
             }
         }
-
         table[0].clientFor().notify(ownAddr)
-
     }
 
     /**
@@ -107,14 +110,46 @@ class ChordNode(
      */
     override fun notify(request: Chord.ChordAddress, responseObserver: StreamObserver<Chord.NotifyResponse>) {
         val wrappedAddress = ChordAddressWrapper.fromChordAddress(request)
+        var changedPred = false
         synchronized(predLock) {
             if (predecessor == null || wrappedAddress.id.isBetween(predecessor!!.id, ownAddr.id)) {
                 if (!wrappedAddress.id.contentEquals(ownAddr.id)) {
                     predecessor = wrappedAddress
+                    changedPred = true
                 }
             }
         }
         respondTo(Chord.NotifyResponse.getDefaultInstance(), responseObserver)
+        if(changedPred){
+            val newPred = predecessor
+            if(newPred != null){
+                remoteObjects.newPredecessor(newPred)
+            }
+        }
+    }
+
+    override fun put(request: Chord.PutRequest, responseObserver: StreamObserver<Chord.PutResponse>) {
+        remoteObjects.put(request.targetList.toBooleanArray(), request.content.toByteArray())
+        respondTo(Chord.PutResponse.newBuilder().setSuccess(true).build(), responseObserver)
+    }
+
+    override fun get(request: Chord.GetRequest, responseObserver: StreamObserver<Chord.GetResponse>) {
+        val storedValue = remoteObjects.get(request.targetList.toBooleanArray())
+        if (storedValue == null) {
+            respondTo(Chord.GetResponse.newBuilder().setSuccess(false).build(), responseObserver)
+        } else {
+            respondTo(
+                Chord.GetResponse.newBuilder().setSuccess(true).setContent(ByteString.copyFrom(storedValue)).build(),
+                responseObserver
+            )
+        }
+    }
+
+    override fun transfer(request: Chord.TransferRequest, responseObserver: StreamObserver<Chord.TransferResponse>) {
+        for (subRequest in request.valuesList) {
+            remoteObjects.put(subRequest.targetList.toBooleanArray(), subRequest.content.toByteArray())
+        }
+        respondTo(Chord.TransferResponse.getDefaultInstance(), responseObserver)
     }
 
     /**

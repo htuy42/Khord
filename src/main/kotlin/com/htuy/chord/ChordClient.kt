@@ -1,5 +1,6 @@
 package com.htuy.chord
 
+import com.google.protobuf.ByteString
 import io.grpc.ManagedChannelBuilder
 
 // TODO: currently has no understanding that calls might fail. Assumes target will never go down
@@ -38,5 +39,37 @@ class ChordClient(toAddr: ChordAddressWrapper) {
         val request = Chord.LookupRequest.newBuilder().addAllTarget(of.toList()).build()
         val response = stub.findSuccessor(request)
         return ChordAddressWrapper.fromChordAddress(response)
+    }
+
+    /**
+     * Store the given value under the given id.
+     */
+    fun put(id: ChordId, value: ByteArray){
+        val request = Chord.PutRequest.newBuilder().addAllTarget(id.toList()).setContent(ByteString.copyFrom(value)).build()
+        stub.put(request)
+    }
+
+    /**
+     * Get the value stored under the given id.
+     */
+    fun get(id: ChordId): ByteArray?{
+        val response = stub.get(Chord.GetRequest.newBuilder().addAllTarget(id.toList()).build())
+        return if(response.success){
+            response.content.toByteArray()
+        } else {
+            null
+        }
+    }
+
+    /**
+     * Transfer the given keys and values to this Node.
+     */
+    fun transfer(keys : List<ChordId>, values: List<ByteArray>){
+        val requestBuilder = Chord.TransferRequest.newBuilder()
+        for(ind in keys.indices){
+            requestBuilder.addValues(Chord.PutRequest.newBuilder().addAllTarget(keys[ind].toList()).setContent(
+                ByteString.copyFrom(values[ind])))
+        }
+        stub.transfer(requestBuilder.build())
     }
 }
